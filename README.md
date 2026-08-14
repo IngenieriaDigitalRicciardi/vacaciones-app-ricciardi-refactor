@@ -1,16 +1,33 @@
-# React + Vite
+# 📅 Sistema de Gestión de Vacaciones y Licencias
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Una aplicación web moderna para la administración de nómina, control de saldos de vacaciones, detección de solapamientos e integración con Google Calendar.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Características Principales
 
-## React Compiler
+* **Gestión de Personal:** Registro y control de empleados organizados por **Sociedad**, **Sucursal**, **Área** y **Legajo**.
+* **Control de Licencias y Saldos:** Carga de solicitudes de vacaciones con cálculo automático de días disponibles por empleado.
+* **Prevención de Solapamientos:** Validación inteligente para evitar la superposición de licencias dentro del mismo equipo/área y sociedad.
+* **Sincronización con Google Calendar:** Integración con la API de Google Calendar para calendarizar automáticamente las licencias con código de colores según el área.
+* **Filtros Avanzados y Búsqueda:** Filtrado dinámico por rango de fechas, sociedad, sucursal, área y buscador en tiempo real por nombre o legajo.
+* **Interfaz Moderna e Intuitiva:** Desarrollada con soporte para *Dark Mode* y diseño adaptativo (*Responsive*).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🛠️ Stack Tecnológico
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+* **Frontend:** [React.js](https://reactjs.org/)
+* **BackEnd:** [Firebase] Google
+* **Estilos:** [Tailwind CSS](https://tailwindcss.com/)
+* **Iconos:** [Lucide React](https://lucide.dev/) / React Icons
+* **Integraciones:** Google Calendar API v3
+
+---
+
+## 💻 Instalación y Configuración Local
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone [https://github.com/tu-usuario/tu-repositorio.git](https://github.com/tu-usuario/tu-repositorio.git)
+   cd tu-repositorio
