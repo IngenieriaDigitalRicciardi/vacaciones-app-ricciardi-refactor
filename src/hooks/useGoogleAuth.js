@@ -8,11 +8,21 @@ const ALLOWED_TEST_USERS = (import.meta.env.VITE_ALLOWED_TEST_USERS || '')
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean);
 
+const MINUTOS_EXPIRACION = 5; 
+
 export function useGoogleAuth({ setMensaje } = {}) {
   const [authStatus, setAuthStatus] = useState('CHECKING'); // 'CHECKING' | 'ALLOWED' | 'DENIED'
   const [userEmail, setUserEmail] = useState('');
   const [tokenClient, setTokenClient] = useState(null);
   const [googleAccessToken, setGoogleAccessToken] = useState(null);
+
+  // 🚪 Función para cerrar sesión y limpiar storage
+  const cerrarSesion = useCallback(() => {
+    localStorage.removeItem('g_auth_session');
+    setUserEmail('');
+    setGoogleAccessToken(null);
+    setAuthStatus('DENIED');
+  }, []);
 
   const verificarYGuardarToken = async (accessToken) => {
     try {
@@ -24,21 +34,30 @@ export function useGoogleAuth({ setMensaje } = {}) {
 
       const userData = await res.json();
       const email = (userData.email || '').toLowerCase().trim();
-      setUserEmail(email);
 
       // 🔒 VALIDACIÓN DE LISTA BLANCA
       if (ALLOWED_TEST_USERS.length > 0 && !ALLOWED_TEST_USERS.includes(email)) {
         console.warn(`Acceso denegado para: ${email}`);
-        setGoogleAccessToken(null);
-        setAuthStatus('DENIED');
+        cerrarSesion();
         return;
       }
 
+      // ⏱️ 1. GUARDAR EN LOCALSTORAGE CON TIEMPO DE EXPIRACIÓN
+      const expiresAt = Date.now() + MINUTOS_EXPIRACION * 60 * 1000;
+      const sessionData = {
+        accessToken,
+        email,
+        expiresAt,
+      };
+
+      localStorage.setItem('g_auth_session', JSON.stringify(sessionData));
+
+      setUserEmail(email);
       setGoogleAccessToken(accessToken);
       setAuthStatus('ALLOWED');
     } catch (err) {
       console.error('Error de autenticación:', err);
-      setAuthStatus('DENIED');
+      cerrarSesion();
     }
   };
 
@@ -92,45 +111,58 @@ export function useGoogleAuth({ setMensaje } = {}) {
   };
 
   useEffect(() => {
-    // 1. Cargar el SDK de Google de forma segura si no está disponible
+    // ⏱️ 2. RESTAURAR SESIÓN AL REFRESCAR LA PÁGINA (Si no venció)
+    const sessionRaw = localStorage.getItem('g_auth_session');
+
+    if (sessionRaw) {
+      try {
+        const { accessToken, email, expiresAt } = JSON.parse(sessionRaw);
+
+        // Si la hora actual es menor a la fecha de expiración, mantenemos la sesión activa
+        if (Date.now() < expiresAt) {
+          setGoogleAccessToken(accessToken);
+          setUserEmail(email);
+          setAuthStatus('ALLOWED');
+        } else {
+          // Si ya pasaron los minutos, limpiamos la sesión expirada
+          cerrarSesion();
+        }
+      } catch (e) {
+        cerrarSesion();
+      }
+    } else {
+      setAuthStatus('DENIED');
+    }
+
+    // Cargar SDK de Google de forma segura
     const cargarSDKYInicializar = () => {
       if (window.google?.accounts?.oauth2) {
         crearTokenClient();
-        setAuthStatus('DENIED'); // Pasa de CHECKING a DENIED para habilitar la vista de Login
         return;
       }
 
-      // Si el script no está en el HTML, lo inyectamos dinámicamente
       const scriptExistente = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
       if (!scriptExistente) {
         const script = document.createElement('script');
         script.src = 'https://accounts.google.com/gsi/client';
         script.async = true;
         script.defer = true;
-        script.onload = () => {
-          crearTokenClient();
-          setAuthStatus('DENIED'); // Finaliza el chequeo inicial
-        };
-        script.onerror = () => {
-          console.error('No se pudo cargar el SDK de Google');
-          setAuthStatus('DENIED');
-        };
+        script.onload = () => crearTokenClient();
+        script.onerror = () => console.error('No se pudo cargar el SDK de Google');
         document.body.appendChild(script);
       } else {
-        scriptExistente.addEventListener('load', () => {
-          crearTokenClient();
-          setAuthStatus('DENIED');
-        });
+        scriptExistente.addEventListener('load', () => crearTokenClient());
       }
     };
 
     cargarSDKYInicializar();
-  }, [crearTokenClient]);
+  }, [crearTokenClient, cerrarSesion]);
 
   return {
     authStatus,
     userEmail,
     googleAccessToken,
     conectarGoogle,
+    cerrarSesion, // Exportado por si quieres agregar un botón de Logout
   };
 }
